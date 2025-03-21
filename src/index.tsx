@@ -17,6 +17,29 @@ const RnSamsungHealthDataApi = NativeModules.RnSamsungHealthDataApi
       }
     );
 
-export function multiply(a: number, b: number): Promise<number> {
-  return RnSamsungHealthDataApi.multiply(a, b);
+// Define health data types
+export type HealthDataType = 'STEPS' | 'SLEEP' | 'HEART_RATE';
+
+// Define permission result interface
+export interface PermissionResult {
+  allGranted: boolean;
+  message: string;
+  grantedPermissions?: string[];
+  deniedPermissions?: string[];
+}
+
+export function initializeHealthStore(): Promise<boolean> {
+  return RnSamsungHealthDataApi.initializeHealthStore();
+}
+
+export function checkHealthPermissionsGranted(
+  permissions: HealthDataType[]
+): Promise<PermissionResult> {
+  return RnSamsungHealthDataApi.checkHealthPermissionsGranted(permissions);
+}
+
+export function requestHealthPermissions(
+  permissions: HealthDataType[]
+): Promise<PermissionResult> {
+  return RnSamsungHealthDataApi.requestHealthPermissions(permissions);
 }

@@ -1,3 +1,13 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="com.rnsamsunghealthdataapi">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.rnsamsunghealthdataapi">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <queries>
+        <package android:name="com.sec.android.app.shealth" />
+    </queries>
+
+    <application>
+        <!-- Meta-data entries to specify Samsung Health permissions -->
+        <meta-data android:name="com.samsung.android.health.permission.read" android:value="com.samsung.health.step_count" />
+    </application>
 </manifest>
