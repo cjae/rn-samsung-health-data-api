@@ -1,7 +1,9 @@
 {
   "compilerOptions": {
     "rootDir": ".",
-    "paths": {},
+    "paths": {
+      "rn-samsung-health-data-api": ["./src/index"]
+    },
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
     "esModuleInterop": true,
@@ -9,7 +11,7 @@
     "jsx": "react-jsx",
     "lib": ["ESNext"],
     "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "moduleResolution": "bundler",
     "noEmit": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
