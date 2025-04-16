@@ -10,15 +10,18 @@ npm install rn-samsung-health-data-api
 
 ## Usage
 
-
 ```js
-import { multiply } from 'rn-samsung-health-data-api';
+import {
+  initializeHealthStore,
+  checkHealthPermissionsGranted,
+  requestHealthPermissions,
+  readStepData,
+} from 'rn-samsung-health-data-api';
 
 // ...
 
-const result = await multiply(3, 7);
+const initData = await initializeHealthStore();
 ```
-
 
 ## Contributing
 

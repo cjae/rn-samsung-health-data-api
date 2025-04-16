@@ -75,7 +75,7 @@ export default function App() {
 
         console.log({ stepData });
       } catch (error) {
-        console.log('======', error);
+        console.log(error);
       }
     };
 
@@ -103,7 +103,7 @@ export default function App() {
 
         console.log({ sleepData });
       } catch (error) {
-        console.log('======', error);
+        console.log(error);
       }
     };
 
@@ -134,7 +134,7 @@ export default function App() {
 
         console.log({ heartRateData });
       } catch (error) {
-        console.log('======', error);
+        console.log(error);
       }
     };
 
