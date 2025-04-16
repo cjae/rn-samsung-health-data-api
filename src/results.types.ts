@@ -31,4 +31,14 @@ export interface SleepRecord {
   endTime: string;
 }
 
-export interface HeartRateData {}
+export interface HeartRateData {
+  data: HeartRateRecord[];
+}
+
+export interface HeartRateRecord {
+  min: number;
+  max: number;
+  avg: number;
+  startTime: string;
+  endTime: string;
+}

@@ -4,6 +4,7 @@ import {
   requestHealthPermissions,
   readStepData,
   readSleepData,
+  readHeartRateData,
 } from 'rn-samsung-health-data-api';
 import { Text, View, StyleSheet } from 'react-native';
 import { useState, useEffect } from 'react';
@@ -24,11 +25,19 @@ export default function App() {
       setResult('Init');
 
       try {
-        const granted = await checkHealthPermissionsGranted(['STEPS', 'SLEEP']);
+        const granted = await checkHealthPermissionsGranted([
+          'STEPS',
+          'SLEEP',
+          'HEART_RATE',
+        ]);
         if (granted.allGranted) {
           setIsPermissionsGrant(true);
         } else {
-          const requested = await requestHealthPermissions(['STEPS', 'SLEEP']);
+          const requested = await requestHealthPermissions([
+            'STEPS',
+            'SLEEP',
+            'HEART_RATE',
+          ]);
           if (requested.allGranted) {
             setIsPermissionsGrant(true);
           } else {
@@ -59,7 +68,7 @@ export default function App() {
             operator: 'between',
             startTime: startDateString,
             endTime: endDateString,
-            groupBy: 'daily',
+            groupBy: 'hourly',
           },
           ascendingOrder: true,
         });
@@ -100,6 +109,37 @@ export default function App() {
 
     if (isPermissionsGranted) {
       handleFetchSleep();
+    }
+  }, [isPermissionsGranted]);
+
+  useEffect(() => {
+    const handleFetchHeartRate = async () => {
+      const todaysDate = new Date();
+
+      const startDate = startOfWeek(todaysDate, { weekStartsOn: 1 });
+      const endDate = endOfWeek(new Date(), { weekStartsOn: 1 });
+
+      const startDateString = startDate.toISOString();
+      const endDateString = endDate.toISOString();
+
+      try {
+        const heartRateData = await readHeartRateData({
+          timeRangeFilter: {
+            operator: 'between',
+            startTime: startDateString,
+            endTime: endDateString,
+          },
+          ascendingOrder: true,
+        });
+
+        console.log({ heartRateData });
+      } catch (error) {
+        console.log('======', error);
+      }
+    };
+
+    if (isPermissionsGranted) {
+      handleFetchHeartRate();
     }
   }, [isPermissionsGranted]);
 

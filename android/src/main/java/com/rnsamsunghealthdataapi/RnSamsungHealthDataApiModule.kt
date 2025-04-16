@@ -24,6 +24,7 @@ import com.samsung.android.sdk.health.data.data.HealthDataPoint
 import com.samsung.android.sdk.health.data.request.LocalTimeFilter
 import com.samsung.android.sdk.health.data.request.Ordering
 import com.samsung.android.sdk.health.data.response.DataResponse
+import com.rnsamsunghealthdataapi.model.HeartRate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -301,12 +302,12 @@ class RnSamsungHealthDataApiModule(reactContext: ReactApplicationContext) :
           var totalDurationInMinutes: Int = 0
           val sleepResult = Arguments.createArray()
         
-          result.dataList.forEach { slepData ->
+          result.dataList.forEach { sleepData ->
             val score: Int
-            score = prepareSleepScore(slepData) ?: 0
+            score = prepareSleepScore(sleepData) ?: 0
 
-            val duration = slepData.getValue(DataType.SleepType.DURATION) ?: Duration.ZERO
-            val sleepSessionList = slepData.getValue(DataType.SleepType.SESSIONS) ?: emptyList()
+            val duration = sleepData.getValue(DataType.SleepType.DURATION) ?: Duration.ZERO
+            val sleepSessionList = sleepData.getValue(DataType.SleepType.SESSIONS) ?: emptyList()
             
             totalDurationInHours += duration.toHours().toInt()
             totalDurationInMinutes += duration.toMinutes().toInt()
@@ -316,8 +317,8 @@ class RnSamsungHealthDataApiModule(reactContext: ReactApplicationContext) :
             entry.putDouble("sessionCount", sleepSessionList.size.toDouble())
             entry.putDouble("durationHours", duration.toHours().toDouble())
             entry.putDouble("durationMinutes", duration.minusHours(duration.toHours()).toMinutes().toDouble()) 
-            entry.putString("startTime", slepData.startTime.toString())
-            entry.putString("endTime", slepData.endTime.toString())
+            entry.putString("startTime", sleepData.startTime.toString())
+            entry.putString("endTime", sleepData.endTime.toString())
            
             sleepResult.pushMap(entry)
           }
@@ -393,19 +394,57 @@ class RnSamsungHealthDataApiModule(reactContext: ReactApplicationContext) :
       val readRequest = if (ascendingOrder != null) {
         val ordering = if(ascendingOrder) { Ordering.ASC } else { Ordering.DESC }
         
-        DataType.StepsType.HEART_RATE.readDataRequestBuilder
+        DataTypes.HEART_RATE.readDataRequestBuilder
           .setLocalTimeFilter(localTimeFilter)
           .setOrdering(ordering)
           .build()
       } else {
-        DataType.StepsType.HEART_RATE.readDataRequestBuilder
+        DataTypes.HEART_RATE.readDataRequestBuilder
           .setLocalTimeFilter(localTimeFilter)
           .build()
       }
       
       coroutineScope.launch {
         try {
-         
+          val result = mStore.readData(readRequest)
+
+          val hrOfFirstQuarter = HeartRate(1000f, 0f, 0f, "00:00", "06:00", 0)
+          val hrOfSecondQuarter = HeartRate(1000f, 0f, 0f, "06:00", "12:00", 0)
+          val hrOfThirdQuarter = HeartRate(1000f, 0f, 0f, "12:00", "18:00", 0)
+          val hrOfFourthQuarter = HeartRate(1000f, 0f, 0f, "18:00", "24:00", 0)
+
+          result.dataList.forEach { heartRateData ->
+            val time = LocalDateTime.ofInstant(heartRateData.startTime, heartRateData.zoneOffset)
+            when {
+              time.isBetween(0, 5) -> processHeartRateData(heartRateData, hrOfFirstQuarter)
+              time.isBetween(6, 11) -> processHeartRateData(heartRateData, hrOfSecondQuarter)
+              time.isBetween(12, 17) -> processHeartRateData(heartRateData, hrOfThirdQuarter)
+              time.isBetween(18, 23) -> processHeartRateData(heartRateData, hrOfFourthQuarter)
+            }
+          }
+
+          val heartRateResult = Arguments.createArray()
+          
+          listOf(hrOfFirstQuarter, hrOfSecondQuarter, hrOfThirdQuarter, hrOfFourthQuarter).forEach { hrQuarter ->
+            hrQuarter.apply { 
+              if (hrQuarter.count != 0) { 
+                hrQuarter.avg /= hrQuarter.count
+
+                val entry = Arguments.createMap()
+                entry.putDouble("min", hrQuarter.min.toDouble())
+                entry.putDouble("max", hrQuarter.max.toDouble())
+                entry.putDouble("avg", hrQuarter.avg.toDouble())
+                entry.putString("startTime", hrQuarter.startTime)
+                entry.putString("endTime", hrQuarter.endTime)
+           
+                heartRateResult.pushMap(entry)  
+              }
+            }
+          }
+
+          val response = Arguments.createMap()
+          response.putArray("data", heartRateResult)
+          promise.resolve(response)
         } catch (e: Exception) {
           promise.reject("READING_ERROR", "Error reading Samsung Health Heart Rate Data", e)
         }
@@ -457,6 +496,29 @@ class RnSamsungHealthDataApiModule(reactContext: ReactApplicationContext) :
     sleepScore = healthDataPoint.getValue(DataType.SleepType.SLEEP_SCORE)
     return sleepScore
   }
+
+  private fun processHeartRateData(heartRateData: HealthDataPoint, hrQuarter: HeartRate) {
+    hrQuarter.apply {
+      heartRateData.getValue(DataType.HeartRateType.HEART_RATE)?.let {
+        avg += it
+        count++
+      }
+      
+      heartRateData.getValue(DataType.HeartRateType.MAX_HEART_RATE)?.let {
+        max = maxOf(max, it)
+      }
+            
+      heartRateData.getValue(DataType.HeartRateType.MIN_HEART_RATE)?.let {
+        if (min != 0f) {
+          min = minOf(min, it)
+        }
+      }
+    }
+  }
+
+  private fun LocalDateTime.isBetween(fromHour: Int, toHour: Int) =
+      this >= this.withHour(fromHour).withMinute(0).withSecond(0) &&
+              this <= this.withHour(toHour).withMinute(59).withSecond(59)
 
   companion object {
     const val NAME = "RnSamsungHealthDataApi"
