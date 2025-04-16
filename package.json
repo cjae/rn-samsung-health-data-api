@@ -1,6 +1,6 @@
 {
   "name": "rn-samsung-health-data-api",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Integration with Samsung health data api",
   "source": "./src/index.tsx",
   "main": "./lib/commonjs/index.js",
