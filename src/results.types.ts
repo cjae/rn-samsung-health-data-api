@@ -32,13 +32,14 @@ export interface SleepRecord {
 }
 
 export interface HeartRateData {
+  unit: string;
   data: HeartRateRecord[];
 }
 
 export interface HeartRateRecord {
-  min: number;
-  max: number;
-  avg: number;
+  min: number | null;
+  max: number | null;
+  heartRate: number | null;
   startTime: string;
   endTime: string;
 }

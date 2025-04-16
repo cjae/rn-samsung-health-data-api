@@ -8,10 +8,6 @@
 
     <application>
         <!-- Meta-data entries to specify Samsung Health permissions -->
-        <meta-data android:name="com.samsung.android.health.permission.read" android:value="com.samsung.health.step_count" />
-
-        <meta-data android:name="com.samsung.android.health.permission.read" android:value="com.samsung.health.sleep" />
-
-        <meta-data android:name="com.samsung.android.health.permission.read" android:value="com.samsung.health.heart_rate" />
+        <meta-data android:name="com.samsung.android.health.permission.read" android:value="com.samsung.health.step_count,com.samsung.health.sleep,com.samsung.health.heart_rate" />
     </application>
 </manifest>

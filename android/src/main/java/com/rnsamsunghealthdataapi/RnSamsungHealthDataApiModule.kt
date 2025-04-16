@@ -28,7 +28,6 @@ import com.rnsamsunghealthdataapi.model.HeartRate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import androidx.lifecycle.lifecycleScope
 import java.time.Duration
 
 class RnSamsungHealthDataApiModule(reactContext: ReactApplicationContext) :
@@ -408,41 +407,29 @@ class RnSamsungHealthDataApiModule(reactContext: ReactApplicationContext) :
         try {
           val result = mStore.readData(readRequest)
 
-          val hrOfFirstQuarter = HeartRate(1000f, 0f, 0f, "00:00", "06:00", 0)
-          val hrOfSecondQuarter = HeartRate(1000f, 0f, 0f, "06:00", "12:00", 0)
-          val hrOfThirdQuarter = HeartRate(1000f, 0f, 0f, "12:00", "18:00", 0)
-          val hrOfFourthQuarter = HeartRate(1000f, 0f, 0f, "18:00", "24:00", 0)
+          val heartRateResult = Arguments.createArray()
 
           result.dataList.forEach { heartRateData ->
-            val time = LocalDateTime.ofInstant(heartRateData.startTime, heartRateData.zoneOffset)
-            when {
-              time.isBetween(0, 5) -> processHeartRateData(heartRateData, hrOfFirstQuarter)
-              time.isBetween(6, 11) -> processHeartRateData(heartRateData, hrOfSecondQuarter)
-              time.isBetween(12, 17) -> processHeartRateData(heartRateData, hrOfThirdQuarter)
-              time.isBetween(18, 23) -> processHeartRateData(heartRateData, hrOfFourthQuarter)
-            }
-          }
+            val startTime = LocalDateTime.ofInstant(heartRateData.startTime, heartRateData.zoneOffset)
+            val endTime = LocalDateTime.ofInstant(heartRateData.endTime, heartRateData.zoneOffset)
+            val heartRate = heartRateData.getValue(DataType.HeartRateType.HEART_RATE)
+            val maxHeartRate = heartRateData.getValue(DataType.HeartRateType.MAX_HEART_RATE)
+            val minHeartRate = heartRateData.getValue(DataType.HeartRateType.MIN_HEART_RATE)
 
-          val heartRateResult = Arguments.createArray()
-          
-          listOf(hrOfFirstQuarter, hrOfSecondQuarter, hrOfThirdQuarter, hrOfFourthQuarter).forEach { hrQuarter ->
-            hrQuarter.apply { 
-              if (hrQuarter.count != 0) { 
-                hrQuarter.avg /= hrQuarter.count
+            val entry = Arguments.createMap()
 
-                val entry = Arguments.createMap()
-                entry.putDouble("min", hrQuarter.min.toDouble())
-                entry.putDouble("max", hrQuarter.max.toDouble())
-                entry.putDouble("avg", hrQuarter.avg.toDouble())
-                entry.putString("startTime", hrQuarter.startTime)
-                entry.putString("endTime", hrQuarter.endTime)
-           
-                heartRateResult.pushMap(entry)  
-              }
-            }
+            entry.putDouble("min", minHeartRate?.toDouble() ?: 0.0)
+            entry.putDouble("max", maxHeartRate?.toDouble() ?: 0.0)
+            entry.putDouble("heartRate", heartRate?.toDouble() ?: 0.0)
+
+            entry.putString("startTime", startTime.toString())
+            entry.putString("endTime", endTime.toString())
+            
+            heartRateResult.pushMap(entry)  
           }
 
           val response = Arguments.createMap()
+          response.putString("unit", "bpm")
           response.putArray("data", heartRateResult)
           promise.resolve(response)
         } catch (e: Exception) {
@@ -496,29 +483,6 @@ class RnSamsungHealthDataApiModule(reactContext: ReactApplicationContext) :
     sleepScore = healthDataPoint.getValue(DataType.SleepType.SLEEP_SCORE)
     return sleepScore
   }
-
-  private fun processHeartRateData(heartRateData: HealthDataPoint, hrQuarter: HeartRate) {
-    hrQuarter.apply {
-      heartRateData.getValue(DataType.HeartRateType.HEART_RATE)?.let {
-        avg += it
-        count++
-      }
-      
-      heartRateData.getValue(DataType.HeartRateType.MAX_HEART_RATE)?.let {
-        max = maxOf(max, it)
-      }
-            
-      heartRateData.getValue(DataType.HeartRateType.MIN_HEART_RATE)?.let {
-        if (min != 0f) {
-          min = minOf(min, it)
-        }
-      }
-    }
-  }
-
-  private fun LocalDateTime.isBetween(fromHour: Int, toHour: Int) =
-      this >= this.withHour(fromHour).withMinute(0).withSecond(0) &&
-              this <= this.withHour(toHour).withMinute(59).withSecond(59)
 
   companion object {
     const val NAME = "RnSamsungHealthDataApi"
