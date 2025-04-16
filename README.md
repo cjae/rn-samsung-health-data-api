@@ -1,6 +1,10 @@
 # rn-samsung-health-data-api
 
-Integration with Samsung health data api
+A React Native library for accessing Samsung Health data on **Android**. Supports step count, sleep, and heart rate data retrieval using Samsung Health SDK.
+
+> ⚠️ **Android Only**: This package only supports Android. All methods are no-ops on iOS and will not crash your app, but will not return any data either.
+
+---
 
 ## Installation
 
